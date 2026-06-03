@@ -9,7 +9,6 @@ pipeline {
         DOCKER_HUB_NAMESPACE = credentials('docker-registry-namespace')
         DOCKER_CREDENTIALS = 'docker-registry-credentials'
         KUBECONFIG_CREDENTIALS = 'kubeconfig'
-        SLACK_WEBHOOK_CREDENTIALS = 'slack-webhook-url'
         K8S_NAMESPACE = 'smart-water'
     }
 
@@ -177,16 +176,7 @@ pipeline {
             }
         }
 
-        stage('Slack Deployment Notification') {
-            steps {
-                withCredentials([string(credentialsId: env.SLACK_WEBHOOK_CREDENTIALS, variable: 'SLACK_WEBHOOK_URL')]) {
-                    powershell '''
-                        $payload = @{ text = "Smart Water Monitor deployed successfully. Build: $env:BUILD_NUMBER Tag: $env:IMAGE_TAG" } | ConvertTo-Json
-                        Invoke-RestMethod -Uri $env:SLACK_WEBHOOK_URL -Method Post -ContentType "application/json" -Body $payload
-                    '''
-                }
-            }
-        }
+        
     }
 
     post {
@@ -198,12 +188,7 @@ pipeline {
                 bat 'kubectl -n %K8S_NAMESPACE% rollout undo deployment/tank-service || exit 0'
                 bat 'kubectl -n %K8S_NAMESPACE% rollout undo deployment/notification-service || exit 0'
             }
-            withCredentials([string(credentialsId: env.SLACK_WEBHOOK_CREDENTIALS, variable: 'SLACK_WEBHOOK_URL')]) {
-                powershell '''
-                    $payload = @{ text = "Smart Water Monitor deployment failed. Rollback attempted. Build: $env:BUILD_NUMBER" } | ConvertTo-Json
-                    Invoke-RestMethod -Uri $env:SLACK_WEBHOOK_URL -Method Post -ContentType "application/json" -Body $payload
-                '''
-            }
+           
         }
 
         success {
