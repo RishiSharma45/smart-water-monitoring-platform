@@ -94,6 +94,7 @@ admin/admin
 kubectl apply -f k8s/namespace.yaml
 kubectl apply -f k8s/configmap.yaml
 kubectl apply -f k8s/secret.yaml
+kubectl apply -f k8s/postgres-init-configmap.yaml
 kubectl apply -f k8s/postgres-pvc.yaml
 kubectl apply -f k8s/
 kubectl apply -f k8s/hpa/

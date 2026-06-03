@@ -14,12 +14,15 @@ docker compose ps
 kubectl apply -f k8s/namespace.yaml
 kubectl apply -f k8s/configmap.yaml
 kubectl apply -f k8s/secret.yaml
+kubectl apply -f k8s/postgres-init-configmap.yaml
 kubectl apply -f k8s/postgres-pvc.yaml
 kubectl apply -f k8s/
 kubectl apply -f k8s/hpa/
 kubectl apply -f k8s/monitoring/
 kubectl apply -f k8s/logging/
 ```
+
+For a completely fresh Kubernetes database, the PostgreSQL init ConfigMap runs automatically during the first start of the Postgres container. If `postgres-pvc` already contains data, the init scripts are skipped by PostgreSQL.
 
 ## Rollout Verification
 

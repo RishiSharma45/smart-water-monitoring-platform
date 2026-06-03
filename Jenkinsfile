@@ -84,6 +84,7 @@ pipeline {
                 bat 'kubectl apply -f k8s/namespace.yaml'
                 bat 'kubectl apply -f k8s/configmap.yaml'
                 bat 'kubectl apply -f k8s/secret.yaml'
+                bat 'kubectl apply -f k8s/postgres-init-configmap.yaml'
                 bat 'kubectl apply -f k8s/postgres-pvc.yaml'
                 bat 'kubectl apply -f k8s/postgres-deployment.yaml'
                 bat 'kubectl apply -f k8s/postgres-service.yaml'
