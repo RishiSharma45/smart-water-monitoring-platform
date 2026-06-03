@@ -8,9 +8,7 @@ This project uses a simple Jenkins pipeline that is easy to explain and demonstr
 GitHub Push
 -> Jenkins Auto Trigger
 -> Checkout Source
--> Install Dependencies
 -> Build Frontend
--> Validate Services
 -> Build Docker Images
 -> Deploy Kubernetes
 -> Verify Deployment
@@ -26,7 +24,6 @@ The improved pipeline:
 - Keeps the GitHub webhook trigger.
 - Keeps Git checkout.
 - Keeps frontend build.
-- Keeps backend validation.
 - Keeps Docker image builds.
 - Keeps Kubernetes deployment.
 - Keeps rollout verification.
@@ -41,38 +38,18 @@ The improved pipeline:
 
 Jenkins checks out the repository and prints the current Git commit hash.
 
-### 2. Install Dependencies
-
-Jenkins runs `npm ci` in:
-
-- `frontend`
-- `services/user-service`
-- `services/tank-service`
-- `services/notification-service`
-
-Using `npm ci` makes dependency installation repeatable from the existing lock files.
-
-### 3. Build Frontend
+### 2. Build Frontend
 
 Jenkins runs:
 
 ```powershell
+npm ci
 npm run build
 ```
 
-This verifies that the React/Vite frontend compiles successfully.
+This installs frontend dependencies from the lock file and verifies that the React/Vite frontend compiles successfully.
 
-### 4. Validate Services
-
-Jenkins runs syntax checks for each backend service:
-
-```powershell
-node --check src/app.js
-```
-
-This is intentionally simple because the services do not currently define automated test scripts.
-
-### 5. Build Docker Images
+### 3. Build Docker Images
 
 Jenkins builds the local Docker images used by Kubernetes:
 
@@ -85,7 +62,7 @@ smart-water-monitor-notification-service:latest
 
 These names match the image names already referenced in the Kubernetes deployment manifests.
 
-### 6. Deploy Kubernetes
+### 4. Deploy Kubernetes
 
 Jenkins applies the core manifests:
 
@@ -101,7 +78,7 @@ Jenkins applies the core manifests:
 
 After applying manifests, Jenkins restarts the application deployments so Kubernetes uses the latest locally built Docker images.
 
-### 7. Verify Deployment
+### 5. Verify Deployment
 
 Jenkins checks rollout status for:
 

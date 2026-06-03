@@ -19,9 +19,7 @@ Jenkins uses the local Docker and kubectl configuration available on the Windows
 
 ```text
 Checkout Source
-Install Dependencies
 Build Frontend
-Validate Services
 Build Docker Images
 Deploy Kubernetes
 Verify Deployment

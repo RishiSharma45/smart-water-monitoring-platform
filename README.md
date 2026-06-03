@@ -135,7 +135,6 @@ The [Jenkinsfile](Jenkinsfile) is designed for a realistic college-level Jenkins
 GitHub Push
 -> Jenkins Auto Trigger
 -> Build Frontend
--> Validate Backend
 -> Build Docker Images
 -> Deploy Kubernetes
 -> Verify Rollout
@@ -145,9 +144,7 @@ GitHub Push
 Pipeline stages:
 
 - Checkout Source
-- Install Dependencies
 - Build Frontend
-- Validate Services
 - Build Docker Images
 - Deploy Kubernetes
 - Verify Deployment
@@ -196,6 +193,10 @@ I built a production-ready Smart Water Monitoring Platform as a cloud-native por
 - [CI/CD Flow](CI_CD_FLOW.md)
 - [Jenkins Troubleshooting](TROUBLESHOOTING_JENKINS.md)
 - [Troubleshooting](docs/troubleshooting.md)
+- [Final Submission Checklist](FINAL_SUBMISSION_CHECKLIST.md)
+- [Project Architecture](PROJECT_ARCHITECTURE.md)
+- [Demo Guide](DEMO_GUIDE.md)
+- [Viva Questions](VIVA_QUESTIONS.md)
 - [Final Project Report](FINAL_PROJECT_REPORT.md)
 - [Demo Script](DEMO_SCRIPT.md)
 - [Interview Questions](INTERVIEW_QUESTIONS.md)

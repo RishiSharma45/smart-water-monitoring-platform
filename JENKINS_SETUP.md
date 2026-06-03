@@ -126,11 +126,9 @@ Start a build from Jenkins or push to GitHub.
 The Jenkins job should show these stages:
 
 1. Checkout Source
-2. Install Dependencies
-3. Build Frontend
-4. Validate Services
-5. Build Docker Images
-6. Deploy Kubernetes
-7. Verify Deployment
+2. Build Frontend
+3. Build Docker Images
+4. Deploy Kubernetes
+5. Verify Deployment
 
 At the end, Jenkins prints deployments, pods, and services from the `smart-water` namespace.

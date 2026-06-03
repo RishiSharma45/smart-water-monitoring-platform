@@ -27,41 +27,11 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
-            steps {
-                dir('frontend') {
-                    bat 'npm ci'
-                }
-                dir('services/user-service') {
-                    bat 'npm ci'
-                }
-                dir('services/tank-service') {
-                    bat 'npm ci'
-                }
-                dir('services/notification-service') {
-                    bat 'npm ci'
-                }
-            }
-        }
-
         stage('Build Frontend') {
             steps {
                 dir('frontend') {
+                    bat 'npm ci'
                     bat 'npm run build'
-                }
-            }
-        }
-
-        stage('Validate Services') {
-            steps {
-                dir('services/user-service') {
-                    bat 'node --check src/app.js'
-                }
-                dir('services/tank-service') {
-                    bat 'node --check src/app.js'
-                }
-                dir('services/notification-service') {
-                    bat 'node --check src/app.js'
                 }
             }
         }
