@@ -23,7 +23,7 @@ spec:
 
         image: smart-water-monitor-frontend:latest
 
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Never
 
         ports:
         - containerPort: 80

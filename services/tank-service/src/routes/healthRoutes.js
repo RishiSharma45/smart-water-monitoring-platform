@@ -3,6 +3,13 @@ const pool = require("../config/db");
 
 const router = express.Router();
 
+router.get("/", (req, res) => {
+    res.json({
+        service: "Tank Service",
+        status: "live"
+    });
+});
+
 router.get("/live", (req, res) => {
     res.json({
         service: "Tank Service",

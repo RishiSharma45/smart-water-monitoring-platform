@@ -25,6 +25,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/health", healthRoutes);
+app.use("/", healthRoutes);
 app.use("/api/users", userRoutes);
 app.get("/metrics", metricsHandler);
 

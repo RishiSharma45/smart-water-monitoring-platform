@@ -69,10 +69,10 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 bat 'docker version'
-                bat 'docker build -t %FRONTEND_IMAGE% frontend'
-                bat 'docker build -t %USER_IMAGE% services/user-service'
-                bat 'docker build -t %TANK_IMAGE% services/tank-service'
-                bat 'docker build -t %NOTIFICATION_IMAGE% services/notification-service'
+                bat 'docker build --load -t %FRONTEND_IMAGE% frontend'
+                bat 'docker build --load -t %USER_IMAGE% services/user-service'
+                bat 'docker build --load -t %TANK_IMAGE% services/tank-service'
+                bat 'docker build --load -t %NOTIFICATION_IMAGE% services/notification-service'
                 bat 'docker images | findstr smart-water-monitor'
             }
         }

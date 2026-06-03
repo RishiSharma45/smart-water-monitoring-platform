@@ -23,7 +23,7 @@ spec:
 
         image: smart-water-monitor-tank-service:latest
 
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Never
 
         ports:
         - containerPort: 3001
@@ -38,14 +38,14 @@ spec:
 
         readinessProbe:
           httpGet:
-            path: /health/ready
+            path: /
             port: 3001
           initialDelaySeconds: 10
           periodSeconds: 10
 
         livenessProbe:
           httpGet:
-            path: /health/live
+            path: /
             port: 3001
           initialDelaySeconds: 20
           periodSeconds: 15

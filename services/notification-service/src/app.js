@@ -32,6 +32,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/alerts", alertRoutes);
 app.get("/metrics", metricsHandler);
 app.use("/health", healthRoutes);
+app.use("/", healthRoutes);
 const PORT = process.env.PORT || 3002;
 
 app.listen(PORT, () => {

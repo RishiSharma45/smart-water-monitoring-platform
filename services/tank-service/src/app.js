@@ -35,6 +35,8 @@ app.get("/", (req, res) => {
     });
 });
 
+app.use("/", healthRoutes);
+
 
 
 const PORT = process.env.PORT || 3001;
