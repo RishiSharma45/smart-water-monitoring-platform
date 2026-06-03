@@ -101,6 +101,17 @@ select {
   margin-bottom: 26px;
 }
 
+.page-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.page-toolbar .page-header {
+  margin-bottom: 18px;
+}
+
 .eyebrow {
   color: #177787;
   font-size: 0.78rem;
@@ -130,6 +141,35 @@ select {
 .stats-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-bottom: 18px;
+}
+
+.ops-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  margin-bottom: 18px;
+  border: 1px solid #dbe5e8;
+  border-radius: 8px;
+  background: #dbe5e8;
+}
+
+.ops-strip div {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.ops-strip span {
+  color: #667982;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.ops-strip strong {
+  font-size: 1.2rem;
 }
 
 .two-column {
@@ -334,6 +374,17 @@ select:focus {
   color: #ffffff;
 }
 
+.primary-button:hover,
+.secondary-button:hover {
+  filter: brightness(1.05);
+}
+
+.button-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .responsive-table {
   overflow-x: auto;
 }
@@ -417,6 +468,7 @@ pre {
   }
 
   .stats-grid,
+  .ops-strip,
   .two-column,
   .health-grid {
     grid-template-columns: 1fr;
@@ -434,6 +486,14 @@ pre {
 
   .nav-list {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .page-toolbar {
+    display: grid;
+  }
+
+  .page-toolbar .secondary-button {
+    width: 100%;
   }
 
   .level-row,

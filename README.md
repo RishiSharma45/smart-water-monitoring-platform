@@ -151,6 +151,17 @@ docs/screenshots/prometheus-targets.png
 docs/screenshots/kubernetes-pods.png
 ```
 
+Recommended screenshots for GitHub:
+
+- React Dashboard
+- Tanks page after updating a water level
+- Alerts page after a low-water event
+- Prometheus targets page
+- Grafana Smart Water Overview dashboard
+- Grafana PostgreSQL Metrics dashboard
+- Grafana Centralized Logging dashboard
+- Kubernetes pods and services
+
 ## Resume Project Description
 
 Built a cloud-native Smart Water Monitoring Platform using React, Node.js microservices, PostgreSQL, Docker, Kubernetes, Prometheus, Grafana, Loki, and Jenkins. Implemented real-time tank monitoring, low-water alerts, containerized deployments, Kubernetes production hardening, CI/CD automation, observability dashboards, centralized logging, and alert integrations.
@@ -168,3 +179,8 @@ I built a production-ready Smart Water Monitoring Platform as a cloud-native por
 - [Monitoring Guide](docs/monitoring-guide.md)
 - [CI/CD Guide](docs/cicd-guide.md)
 - [Troubleshooting](docs/troubleshooting.md)
+- [Final Project Report](FINAL_PROJECT_REPORT.md)
+- [Demo Script](DEMO_SCRIPT.md)
+- [Interview Questions](INTERVIEW_QUESTIONS.md)
+- [Resume Project Description](RESUME_PROJECT_DESCRIPTION.md)
+- [Final Checklist](FINAL_CHECKLIST.md)

@@ -6,11 +6,18 @@ import StatusBadge from "../components/StatusBadge.jsx";
 function SystemHealth() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const loadHealth = async () => {
-    setLoading(true);
-    setServices(await fetchServiceHealth());
-    setLoading(false);
+    try {
+      setLoading(true);
+      setServices(await fetchServiceHealth());
+      setError("");
+    } catch (err) {
+      setError(err.message || "Unable to check system health");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -24,6 +31,8 @@ function SystemHealth() {
         title="System Health"
         description="Check whether the user, tank, and notification backend services are reachable from the frontend."
       />
+
+      {error && <div className="alert-message">{error}</div>}
 
       <div className="health-grid">
         {services.map((service) => (
@@ -54,9 +63,11 @@ function SystemHealth() {
 
       {loading && <p className="empty-state">Checking service health...</p>}
 
-      <button className="secondary-button" type="button" onClick={loadHealth}>
-        Refresh Status
-      </button>
+      <div className="button-row">
+        <button className="secondary-button" type="button" onClick={loadHealth}>
+          {loading ? "Checking..." : "Refresh Status"}
+        </button>
+      </div>
     </section>
   );
 }

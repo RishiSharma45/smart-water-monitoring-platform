@@ -116,3 +116,39 @@ flowchart LR
     Promtail["Promtail"] --> Loki["Loki"]
     Grafana --> Loki
 ```
+
+## Low Water Alert Sequence
+
+```mermaid
+sequenceDiagram
+    participant UI as React Frontend
+    participant Tank as Tank Service
+    participant Notify as Notification Service
+    participant DB as PostgreSQL
+    participant Metrics as Prometheus Metrics
+
+    UI->>Tank: PUT /api/tanks/:id { water_level }
+    Tank->>DB: UPDATE tanks SET water_level
+    DB-->>Tank: Updated tank
+    Tank->>Notify: POST /api/notifications/check
+    Notify->>Notify: Check water_level < 20
+    Notify->>DB: INSERT INTO alerts
+    Notify->>Metrics: Increment low water alert counter
+    Notify-->>Tank: LOW_WATER_LEVEL
+    Tank->>Metrics: Increment tank update counter
+    Tank-->>UI: Updated tank JSON
+```
+
+## Deployment Diagram
+
+```mermaid
+flowchart LR
+    Dev["Developer Push"] --> GitHub["GitHub Repository"]
+    GitHub --> Webhook["GitHub Webhook"]
+    Webhook --> Jenkins["Jenkins"]
+    Jenkins --> DockerHub["Docker Hub Images"]
+    Jenkins --> K8s["Kubernetes Cluster"]
+    DockerHub --> K8s
+    K8s --> Users["Users"]
+    K8s --> Observability["Prometheus / Grafana / Loki"]
+```

@@ -26,6 +26,20 @@ spec:
         ports:
         - containerPort: 9187
 
+        readinessProbe:
+          httpGet:
+            path: /metrics
+            port: 9187
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
+        livenessProbe:
+          httpGet:
+            path: /metrics
+            port: 9187
+          initialDelaySeconds: 20
+          periodSeconds: 20
+
         env:
         - name: DATA_SOURCE_URI
           value: postgres-service:5432/waterdb?sslmode=disable

@@ -10,25 +10,27 @@ function Dashboard() {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  const loadDashboard = async () => {
+    try {
+      setLoading(true);
+      const [tankData, alertData] = await Promise.all([
+        fetchTanks(),
+        fetchAlerts()
+      ]);
+      setTanks(tankData);
+      setAlerts(alertData);
+      setLastUpdated(new Date());
+      setError("");
+    } catch (err) {
+      setError(err.message || "Unable to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadDashboard = async () => {
-      try {
-        setLoading(true);
-        const [tankData, alertData] = await Promise.all([
-          fetchTanks(),
-          fetchAlerts()
-        ]);
-        setTanks(tankData);
-        setAlerts(alertData);
-        setError("");
-      } catch (err) {
-        setError(err.message || "Unable to load dashboard data");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadDashboard();
   }, []);
 
@@ -43,16 +45,44 @@ function Dashboard() {
   ).length;
 
   const lowTanks = tanks.filter((tank) => Number(tank.water_level) < 20);
+  const healthyTanks = tanks.filter((tank) => Number(tank.water_level) >= 50);
+  const warningTanks = tanks.filter(
+    (tank) => Number(tank.water_level) >= 20 && Number(tank.water_level) < 50
+  );
 
   return (
     <section>
-      <PageHeader
-        eyebrow="Operations Overview"
-        title="Water Monitoring Dashboard"
-        description="Track tank capacity, low-water alerts, and platform readiness from one control surface."
-      />
+      <div className="page-toolbar">
+        <PageHeader
+          eyebrow="Operations Overview"
+          title="Water Monitoring Dashboard"
+          description="Track tank capacity, low-water alerts, and platform readiness from one control surface."
+        />
+        <button className="secondary-button" type="button" onClick={loadDashboard}>
+          {loading ? "Refreshing..." : "Refresh"}
+        </button>
+      </div>
 
       {error && <div className="alert-message">{error}</div>}
+
+      <div className="ops-strip">
+        <div>
+          <span>Healthy</span>
+          <strong>{healthyTanks.length}</strong>
+        </div>
+        <div>
+          <span>Warning</span>
+          <strong>{warningTanks.length}</strong>
+        </div>
+        <div>
+          <span>Critical</span>
+          <strong>{lowTanks.length}</strong>
+        </div>
+        <div>
+          <span>Last Updated</span>
+          <strong>{lastUpdated ? lastUpdated.toLocaleTimeString() : "Pending"}</strong>
+        </div>
+      </div>
 
       <div className="stats-grid">
         <StatCard

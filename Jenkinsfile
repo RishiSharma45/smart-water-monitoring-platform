@@ -1,11 +1,15 @@
 pipeline {
     agent any
 
+    triggers {
+        githubPush()
+    }
+
     environment {
-        REGISTRY = credentials('docker-registry-namespace')
+        DOCKER_HUB_NAMESPACE = credentials('docker-registry-namespace')
         DOCKER_CREDENTIALS = 'docker-registry-credentials'
         KUBECONFIG_CREDENTIALS = 'kubeconfig'
-        IMAGE_TAG = "${env.BUILD_NUMBER}-${env.GIT_COMMIT.take(7)}"
+        SLACK_WEBHOOK_CREDENTIALS = 'slack-webhook-url'
         K8S_NAMESPACE = 'smart-water'
     }
 
@@ -19,6 +23,23 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+            }
+        }
+
+        stage('Initialize Build Metadata') {
+            steps {
+                script {
+                    env.GIT_COMMIT_SHORT = bat(
+                        script: '@git rev-parse --short HEAD',
+                        returnStdout: true
+                    ).trim()
+                    env.IMAGE_TAG = "${env.BUILD_NUMBER}-${env.GIT_COMMIT_SHORT}"
+                    env.FRONTEND_IMAGE = "${env.DOCKER_HUB_NAMESPACE}/smart-water-frontend:${env.IMAGE_TAG}"
+                    env.USER_IMAGE = "${env.DOCKER_HUB_NAMESPACE}/smart-water-user-service:${env.IMAGE_TAG}"
+                    env.TANK_IMAGE = "${env.DOCKER_HUB_NAMESPACE}/smart-water-tank-service:${env.IMAGE_TAG}"
+                    env.NOTIFICATION_IMAGE = "${env.DOCKER_HUB_NAMESPACE}/smart-water-notification-service:${env.IMAGE_TAG}"
+                }
+                echo "Building Smart Water Monitor image tag ${IMAGE_TAG}"
             }
         }
 
@@ -96,21 +117,21 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                bat 'docker build -t %REGISTRY%/smart-water-frontend:%IMAGE_TAG% frontend'
-                bat 'docker build -t %REGISTRY%/smart-water-user-service:%IMAGE_TAG% services/user-service'
-                bat 'docker build -t %REGISTRY%/smart-water-tank-service:%IMAGE_TAG% services/tank-service'
-                bat 'docker build -t %REGISTRY%/smart-water-notification-service:%IMAGE_TAG% services/notification-service'
+                bat 'docker build -t %FRONTEND_IMAGE% frontend'
+                bat 'docker build -t %USER_IMAGE% services/user-service'
+                bat 'docker build -t %TANK_IMAGE% services/tank-service'
+                bat 'docker build -t %NOTIFICATION_IMAGE% services/notification-service'
             }
         }
 
-        stage('Docker Push') {
+        stage('Docker Hub Push') {
             steps {
                 withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDENTIALS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
-                    bat 'docker push %REGISTRY%/smart-water-frontend:%IMAGE_TAG%'
-                    bat 'docker push %REGISTRY%/smart-water-user-service:%IMAGE_TAG%'
-                    bat 'docker push %REGISTRY%/smart-water-tank-service:%IMAGE_TAG%'
-                    bat 'docker push %REGISTRY%/smart-water-notification-service:%IMAGE_TAG%'
+                    bat 'docker push %FRONTEND_IMAGE%'
+                    bat 'docker push %USER_IMAGE%'
+                    bat 'docker push %TANK_IMAGE%'
+                    bat 'docker push %NOTIFICATION_IMAGE%'
                 }
             }
         }
@@ -122,13 +143,24 @@ pipeline {
                     bat 'kubectl apply -f k8s/configmap.yaml'
                     bat 'kubectl apply -f k8s/secret.yaml'
                     bat 'kubectl apply -f k8s/postgres-pvc.yaml'
-                    bat 'kubectl apply -f k8s/'
+                    bat 'kubectl apply -f k8s/postgres-deployment.yaml'
+                    bat 'kubectl apply -f k8s/postgres-service.yaml'
+                    bat 'kubectl apply -f k8s/user-deployment.yaml'
+                    bat 'kubectl apply -f k8s/user-service.yaml'
+                    bat 'kubectl apply -f k8s/tank-deployment.yaml'
+                    bat 'kubectl apply -f k8s/tank-service.yaml'
+                    bat 'kubectl apply -f k8s/notification-deployment.yaml'
+                    bat 'kubectl apply -f k8s/notification-service.yaml'
+                    bat 'kubectl apply -f k8s/frontend-deployment.yaml'
+                    bat 'kubectl apply -f k8s/frontend-service.yaml'
+                    bat 'kubectl apply -f k8s/ingress.yaml'
                     bat 'kubectl apply -f k8s/hpa/'
                     bat 'kubectl apply -f k8s/monitoring/'
-                    bat 'kubectl -n %K8S_NAMESPACE% set image deployment/frontend frontend=%REGISTRY%/smart-water-frontend:%IMAGE_TAG%'
-                    bat 'kubectl -n %K8S_NAMESPACE% set image deployment/user-service user-service=%REGISTRY%/smart-water-user-service:%IMAGE_TAG%'
-                    bat 'kubectl -n %K8S_NAMESPACE% set image deployment/tank-service tank-service=%REGISTRY%/smart-water-tank-service:%IMAGE_TAG%'
-                    bat 'kubectl -n %K8S_NAMESPACE% set image deployment/notification-service notification-service=%REGISTRY%/smart-water-notification-service:%IMAGE_TAG%'
+                    bat 'kubectl apply -f k8s/logging/'
+                    bat 'kubectl -n %K8S_NAMESPACE% set image deployment/frontend frontend=%FRONTEND_IMAGE%'
+                    bat 'kubectl -n %K8S_NAMESPACE% set image deployment/user-service user-service=%USER_IMAGE%'
+                    bat 'kubectl -n %K8S_NAMESPACE% set image deployment/tank-service tank-service=%TANK_IMAGE%'
+                    bat 'kubectl -n %K8S_NAMESPACE% set image deployment/notification-service notification-service=%NOTIFICATION_IMAGE%'
                 }
             }
         }
@@ -140,30 +172,42 @@ pipeline {
                     bat 'kubectl -n %K8S_NAMESPACE% rollout status deployment/user-service --timeout=120s'
                     bat 'kubectl -n %K8S_NAMESPACE% rollout status deployment/tank-service --timeout=120s'
                     bat 'kubectl -n %K8S_NAMESPACE% rollout status deployment/notification-service --timeout=120s'
+                    bat 'kubectl -n %K8S_NAMESPACE% get pods'
                 }
             }
         }
 
-        stage('Rollback Preview') {
+        stage('Slack Deployment Notification') {
             steps {
-                echo 'Rollback is automated in the post-failure section if deployment verification fails.'
+                withCredentials([string(credentialsId: env.SLACK_WEBHOOK_CREDENTIALS, variable: 'SLACK_WEBHOOK_URL')]) {
+                    powershell '''
+                        $payload = @{ text = "Smart Water Monitor deployed successfully. Build: $env:BUILD_NUMBER Tag: $env:IMAGE_TAG" } | ConvertTo-Json
+                        Invoke-RestMethod -Uri $env:SLACK_WEBHOOK_URL -Method Post -ContentType "application/json" -Body $payload
+                    '''
+                }
             }
         }
     }
 
     post {
-        success {
-            echo "Smart Water Monitor deployed successfully with image tag ${IMAGE_TAG}"
-        }
-
         failure {
-            echo "Pipeline failed. Rollback stage attempted to restore previous Kubernetes deployments."
+            echo 'Pipeline failed. Attempting Kubernetes rollback.'
             withCredentials([file(credentialsId: env.KUBECONFIG_CREDENTIALS, variable: 'KUBECONFIG')]) {
                 bat 'kubectl -n %K8S_NAMESPACE% rollout undo deployment/frontend || exit 0'
                 bat 'kubectl -n %K8S_NAMESPACE% rollout undo deployment/user-service || exit 0'
                 bat 'kubectl -n %K8S_NAMESPACE% rollout undo deployment/tank-service || exit 0'
                 bat 'kubectl -n %K8S_NAMESPACE% rollout undo deployment/notification-service || exit 0'
             }
+            withCredentials([string(credentialsId: env.SLACK_WEBHOOK_CREDENTIALS, variable: 'SLACK_WEBHOOK_URL')]) {
+                powershell '''
+                    $payload = @{ text = "Smart Water Monitor deployment failed. Rollback attempted. Build: $env:BUILD_NUMBER" } | ConvertTo-Json
+                    Invoke-RestMethod -Uri $env:SLACK_WEBHOOK_URL -Method Post -ContentType "application/json" -Body $payload
+                '''
+            }
+        }
+
+        success {
+            echo "Smart Water Monitor deployed successfully with image tag ${IMAGE_TAG}"
         }
     }
 }

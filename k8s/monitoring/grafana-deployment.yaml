@@ -18,6 +18,79 @@ data:
         isDefault: true
         editable: true
 ---
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: grafana-dashboard-provider-config
+  namespace: smart-water
+
+data:
+  dashboards.yml: |
+    apiVersion: 1
+
+    providers:
+      - name: Smart Water Dashboards
+        orgId: 1
+        folder: Smart Water Monitor
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards
+---
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: grafana-dashboard-smart-water-overview
+  namespace: smart-water
+
+data:
+  smart-water-overview.json: |
+    {
+      "uid": "smart-water-overview",
+      "title": "Smart Water Overview",
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "10s",
+      "panels": [
+        {
+          "id": 1,
+          "title": "Total Tanks",
+          "type": "stat",
+          "gridPos": { "h": 7, "w": 6, "x": 0, "y": 0 },
+          "targets": [{ "expr": "max(smart_water_tanks_total) or vector(0)", "refId": "A" }],
+          "datasource": { "type": "prometheus", "uid": "Prometheus" }
+        },
+        {
+          "id": 2,
+          "title": "Tank Updates",
+          "type": "stat",
+          "gridPos": { "h": 7, "w": 6, "x": 6, "y": 0 },
+          "targets": [{ "expr": "sum(smart_water_tank_updates_total) or vector(0)", "refId": "A" }],
+          "datasource": { "type": "prometheus", "uid": "Prometheus" }
+        },
+        {
+          "id": 3,
+          "title": "Low Water Alerts",
+          "type": "stat",
+          "gridPos": { "h": 7, "w": 6, "x": 12, "y": 0 },
+          "targets": [{ "expr": "sum(smart_water_low_water_alerts_total) or vector(0)", "refId": "A" }],
+          "datasource": { "type": "prometheus", "uid": "Prometheus" }
+        },
+        {
+          "id": 4,
+          "title": "Service Health",
+          "type": "stat",
+          "gridPos": { "h": 7, "w": 6, "x": 18, "y": 0 },
+          "targets": [{ "expr": "sum(smart_water_service_health) or vector(0)", "refId": "A" }],
+          "datasource": { "type": "prometheus", "uid": "Prometheus" }
+        }
+      ]
+    }
+---
 apiVersion: apps/v1
 kind: Deployment
 
@@ -80,7 +153,23 @@ spec:
           mountPath: /etc/grafana/provisioning/datasources/prometheus.yml
           subPath: prometheus.yml
 
+        - name: grafana-dashboard-provider-config
+          mountPath: /etc/grafana/provisioning/dashboards/dashboards.yml
+          subPath: dashboards.yml
+
+        - name: grafana-dashboard-smart-water-overview
+          mountPath: /var/lib/grafana/dashboards/smart-water-overview.json
+          subPath: smart-water-overview.json
+
       volumes:
       - name: grafana-datasource-config
         configMap:
           name: grafana-datasource-config
+
+      - name: grafana-dashboard-provider-config
+        configMap:
+          name: grafana-dashboard-provider-config
+
+      - name: grafana-dashboard-smart-water-overview
+        configMap:
+          name: grafana-dashboard-smart-water-overview
