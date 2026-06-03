@@ -1,41 +1,55 @@
 # CI/CD Guide
 
+The Jenkins pipeline is designed for a local Windows Jenkins installation with Docker Desktop and Docker Desktop Kubernetes.
+
 ## Jenkins Credentials Required
 
-Create these Jenkins credentials:
+No Jenkins credentials are required for the default local demo pipeline.
 
-```text
-docker-registry-namespace
-docker-registry-credentials
-kubeconfig
-```
+The pipeline does not require:
+
+- Docker Hub credentials
+- kubeconfig file credentials
+- Slack credentials
+- cloud provider credentials
+
+Jenkins uses the local Docker and kubectl configuration available on the Windows machine where Jenkins runs.
 
 ## Pipeline Stages
 
 ```text
-Checkout
+Checkout Source
 Install Dependencies
 Build Frontend
-Validate Backend Syntax
-Docker Build
-Docker Push
-Kubernetes Deploy
-Verify Rollout
-Rollback Preview
+Validate Services
+Build Docker Images
+Deploy Kubernetes
+Verify Deployment
 ```
 
-Rollback runs automatically in the post-failure block.
+## Image Names
 
-## Image Tagging
-
-Images are tagged as:
+Images are built locally with the same names used in the Kubernetes manifests:
 
 ```text
-BUILD_NUMBER-GIT_SHA
+smart-water-monitor-frontend:latest
+smart-water-monitor-user-service:latest
+smart-water-monitor-tank-service:latest
+smart-water-monitor-notification-service:latest
 ```
 
-Example:
+Because this is a local Docker Desktop deployment, images are not pushed to a remote registry.
 
-```text
-25-a1b2c3d
-```
+## Deployment
+
+The pipeline applies the core Kubernetes manifests and restarts the application deployments so the latest local images are used.
+
+Rollout status is checked for:
+
+- postgres
+- frontend
+- user-service
+- tank-service
+- notification-service
+
+The final stage prints deployments, pods, and services in the `smart-water` namespace.

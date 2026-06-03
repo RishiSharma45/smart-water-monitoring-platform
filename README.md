@@ -17,13 +17,13 @@ Production-ready Smart Water Monitoring Platform built as a cloud-native portfol
 - PostgreSQL persistence.
 - Tank creation and water-level updates.
 - Low-water alert generation.
-- Optional email and Slack notifications.
+- Optional notification configuration, disabled by default for local demos.
 - Prometheus metrics from every backend service.
 - Grafana dashboards for application, backend APIs, infrastructure, logs, and PostgreSQL.
 - Loki and Promtail centralized logging.
 - Docker Compose local deployment.
 - Kubernetes production manifests with probes, resources, HPA, PVC, namespace, and Ingress.
-- Jenkins CI/CD pipeline with image tagging, Kubernetes deployment, and rollback.
+- Jenkins CI/CD pipeline for local Docker Desktop image builds, Kubernetes deployment, and rollout verification.
 
 ## Tech Stack
 
@@ -128,17 +128,30 @@ Dashboards:
 
 ## CI/CD
 
-The [Jenkinsfile](Jenkinsfile) includes:
+The [Jenkinsfile](Jenkinsfile) is designed for a realistic college-level Jenkins demo on Windows with Docker Desktop:
 
-- dependency installation
-- frontend build
-- backend syntax validation
-- Docker image builds
-- image tagging with build number and Git commit
-- Docker image push
-- Kubernetes deployment
-- rollout verification
-- automated rollback on failure
+```text
+GitHub Push
+-> Jenkins Auto Trigger
+-> Build Frontend
+-> Validate Backend
+-> Build Docker Images
+-> Deploy Kubernetes
+-> Verify Rollout
+-> SUCCESS
+```
+
+Pipeline stages:
+
+- Checkout Source
+- Install Dependencies
+- Build Frontend
+- Validate Services
+- Build Docker Images
+- Deploy Kubernetes
+- Verify Deployment
+
+The pipeline builds local Docker images and deploys the Kubernetes manifests directly to the active Docker Desktop Kubernetes context. It does not require Docker Hub, Slack, cloud credentials, or paid services.
 
 ## Screenshots
 
@@ -178,6 +191,9 @@ I built a production-ready Smart Water Monitoring Platform as a cloud-native por
 - [Kubernetes Setup](docs/kubernetes-setup.md)
 - [Monitoring Guide](docs/monitoring-guide.md)
 - [CI/CD Guide](docs/cicd-guide.md)
+- [Jenkins Setup](JENKINS_SETUP.md)
+- [CI/CD Flow](CI_CD_FLOW.md)
+- [Jenkins Troubleshooting](TROUBLESHOOTING_JENKINS.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Final Project Report](FINAL_PROJECT_REPORT.md)
 - [Demo Script](DEMO_SCRIPT.md)

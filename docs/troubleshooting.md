@@ -50,7 +50,10 @@ http://localhost:9090/targets
 
 Check:
 
-- Docker registry credentials.
-- `kubeconfig` credential.
-- Kubernetes namespace exists.
-- Image names match deployment container names.
+- Docker Desktop is running.
+- Docker Desktop Kubernetes is enabled.
+- Jenkins can run `docker`, `kubectl`, `node`, and `npm`.
+- `kubectl config current-context` points to the intended local cluster, usually `docker-desktop`.
+- Local image names match deployment container images.
+
+See [Jenkins Troubleshooting](../TROUBLESHOOTING_JENKINS.md) for the full checklist.

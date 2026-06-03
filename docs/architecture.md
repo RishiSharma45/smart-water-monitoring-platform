@@ -96,11 +96,10 @@ flowchart LR
     Install --> Build["Build Frontend"]
     Build --> Validate["Validate Backend"]
     Validate --> Images["Build Docker Images"]
-    Images --> Push["Push Tagged Images"]
-    Push --> Deploy["kubectl apply + set image"]
-    Deploy --> Verify["Rollout Verification"]
+    Images --> Deploy["kubectl apply manifests"]
+    Deploy --> Restart["Restart app deployments"]
+    Restart --> Verify["Rollout Verification"]
     Verify --> Success["Deployment Success"]
-    Verify --> Rollback["Automated Rollback"]
 ```
 
 ## Monitoring Architecture
@@ -146,9 +145,9 @@ flowchart LR
     Dev["Developer Push"] --> GitHub["GitHub Repository"]
     GitHub --> Webhook["GitHub Webhook"]
     Webhook --> Jenkins["Jenkins"]
-    Jenkins --> DockerHub["Docker Hub Images"]
+    Jenkins --> Images["Local Docker Desktop Images"]
     Jenkins --> K8s["Kubernetes Cluster"]
-    DockerHub --> K8s
+    Images --> K8s
     K8s --> Users["Users"]
     K8s --> Observability["Prometheus / Grafana / Loki"]
 ```
