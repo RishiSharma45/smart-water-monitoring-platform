@@ -1,0 +1,101 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: prometheus-config
+  namespace: smart-water
+
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    scrape_configs:
+      - job_name: prometheus
+        static_configs:
+          - targets:
+              - localhost:9090
+
+      - job_name: smart-water-user-service
+        metrics_path: /metrics
+        static_configs:
+          - targets:
+              - user-service:3000
+
+      - job_name: smart-water-tank-service
+        metrics_path: /metrics
+        static_configs:
+          - targets:
+              - tank-service:3001
+
+      - job_name: smart-water-notification-service
+        metrics_path: /metrics
+        static_configs:
+          - targets:
+              - notification-service:3002
+
+      - job_name: postgres-exporter
+        static_configs:
+          - targets:
+              - postgres-exporter:9187
+---
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: prometheus
+  namespace: smart-water
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: prometheus
+
+  template:
+    metadata:
+      labels:
+        app: prometheus
+
+    spec:
+      containers:
+      - name: prometheus
+
+        image: prom/prometheus:v2.55.1
+
+        ports:
+        - containerPort: 9090
+
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 9090
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 9090
+          initialDelaySeconds: 20
+          periodSeconds: 15
+
+        volumeMounts:
+        - name: prometheus-config
+          mountPath: /etc/prometheus/prometheus.yml
+          subPath: prometheus.yml
+
+      volumes:
+      - name: prometheus-config
+        configMap:
+          name: prometheus-config

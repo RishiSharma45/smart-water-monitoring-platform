@@ -1,0 +1,80 @@
+{
+  "uid": "smart-water-infrastructure",
+  "title": "Infrastructure",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 2,
+  "refresh": "10s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Service CPU Usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum by (service) (rate(smart_water_process_cpu_user_seconds_total[5m]) + rate(smart_water_process_cpu_system_seconds_total[5m])) or vector(0)",
+          "legendFormat": "{{service}}",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "Prometheus" }
+    },
+    {
+      "id": 2,
+      "title": "Service Memory Usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "smart_water_process_resident_memory_bytes or vector(0)",
+          "legendFormat": "{{service}}",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "Prometheus" }
+    },
+    {
+      "id": 3,
+      "title": "PostgreSQL Up",
+      "type": "stat",
+      "gridPos": { "h": 7, "w": 8, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "up{job=\"postgres-exporter\"} or vector(0)",
+          "legendFormat": "PostgreSQL",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "Prometheus" }
+    },
+    {
+      "id": 4,
+      "title": "PostgreSQL Connections",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 8, "y": 8 },
+      "targets": [
+        {
+          "expr": "pg_stat_database_numbackends{datname=\"waterdb\"} or vector(0)",
+          "legendFormat": "connections",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "Prometheus" }
+    },
+    {
+      "id": 5,
+      "title": "PostgreSQL Transactions",
+      "type": "timeseries",
+      "gridPos": { "h": 7, "w": 8, "x": 16, "y": 8 },
+      "targets": [
+        {
+          "expr": "rate(pg_stat_database_xact_commit{datname=\"waterdb\"}[5m]) or vector(0)",
+          "legendFormat": "commits/sec",
+          "refId": "A"
+        }
+      ],
+      "datasource": { "type": "prometheus", "uid": "Prometheus" }
+    }
+  ]
+}

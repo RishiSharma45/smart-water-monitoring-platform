@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: smart-water-config
+  namespace: smart-water
+
+data:
+  DB_HOST: postgres-service
+  DB_PORT: "5432"
+  DB_NAME: waterdb
+
+  USER_PORT: "3000"
+  TANK_PORT: "3001"
+  NOTIFICATION_PORT: "3002"
+
+  NOTIFICATION_SERVICE_URL: http://notification-service:3002
+  EMAIL_ENABLED: "false"
+  SMTP_HOST: ""
+  SMTP_PORT: "587"
+  SMTP_SECURE: "false"
+  ALERT_EMAIL_FROM: ""
+  ALERT_EMAIL_TO: ""
+  SLACK_ENABLED: "false"

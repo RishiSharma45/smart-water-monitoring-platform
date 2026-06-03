@@ -1,0 +1,30 @@
+const express = require("express");
+const pool = require("../config/db");
+
+const router = express.Router();
+
+router.get("/live", (req, res) => {
+    res.json({
+        service: "Notification Service",
+        status: "live"
+    });
+});
+
+router.get("/ready", async (req, res) => {
+    try {
+        await pool.query("SELECT 1");
+        res.json({
+            service: "Notification Service",
+            status: "ready",
+            database: "connected"
+        });
+    } catch (error) {
+        res.status(503).json({
+            service: "Notification Service",
+            status: "not_ready",
+            database: "unavailable"
+        });
+    }
+});
+
+module.exports = router;

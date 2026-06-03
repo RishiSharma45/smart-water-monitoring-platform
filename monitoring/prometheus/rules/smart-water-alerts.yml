@@ -1,0 +1,38 @@
+groups:
+  - name: smart-water-alerts
+    rules:
+      - alert: SmartWaterServiceDown
+        expr: up{job=~"smart-water-.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Smart Water service is down"
+          description: "{{ $labels.job }} target {{ $labels.instance }} has been unavailable for more than 1 minute."
+
+      - alert: SmartWaterHighErrorRate
+        expr: sum by (service) (rate(smart_water_http_errors_total[5m])) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API error rate"
+          description: "{{ $labels.service }} is returning elevated API errors."
+
+      - alert: SmartWaterSlowResponses
+        expr: histogram_quantile(0.95, sum by (le, service) (rate(smart_water_http_request_duration_seconds_bucket[5m]))) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow backend responses"
+          description: "{{ $labels.service }} p95 response time is above 1 second."
+
+      - alert: SmartWaterPostgresExporterDown
+        expr: up{job="postgres-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL exporter is down"
+          description: "Prometheus cannot scrape PostgreSQL metrics."

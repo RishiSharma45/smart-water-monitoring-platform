@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: loki
+  namespace: smart-water
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: loki
+
+  template:
+    metadata:
+      labels:
+        app: loki
+
+    spec:
+      containers:
+      - name: loki
+        image: grafana/loki:3.2.1
+        ports:
+        - containerPort: 3100
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi

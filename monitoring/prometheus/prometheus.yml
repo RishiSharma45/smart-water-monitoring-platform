@@ -1,0 +1,35 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - prometheus:9090
+
+  - job_name: smart-water-user-service
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - user-service:3000
+
+  - job_name: smart-water-tank-service
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - tank-service:3001
+
+  - job_name: smart-water-notification-service
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - notification-service:3002
+
+  - job_name: postgres-exporter
+    static_configs:
+      - targets:
+          - postgres-exporter:9187

@@ -1,0 +1,204 @@
+services:
+
+  postgres:
+    image: postgres:16
+
+    container_name: postgres-water
+
+    environment:
+      POSTGRES_USER: ${DB_USER:-admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin123}
+      POSTGRES_DB: ${DB_NAME:-waterdb}
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./docker/db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+
+  user-service:
+
+    build:
+      context: ./services/user-service
+
+
+    container_name: user-service
+
+    depends_on:
+      - postgres
+
+    ports:
+      - "3000:3000"
+
+    environment:
+      PORT: 3000
+
+      DB_USER: ${DB_USER:-admin}
+      DB_PASSWORD: ${DB_PASSWORD:-admin123}
+      DB_NAME: ${DB_NAME:-waterdb}
+      DB_HOST: postgres
+      DB_PORT: 5432
+
+  tank-service:
+
+    build:
+      context: ./services/tank-service
+
+
+    container_name: tank-service
+
+    depends_on:
+      - postgres
+
+    ports:
+      - "3001:3001"
+
+    environment:
+      PORT: 3001
+
+      DB_USER: ${DB_USER:-admin}
+      DB_PASSWORD: ${DB_PASSWORD:-admin123}
+      DB_NAME: ${DB_NAME:-waterdb}
+      DB_HOST: postgres
+      DB_PORT: 5432
+
+      NOTIFICATION_SERVICE_URL: http://notification-service:3002
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+
+    container_name: notification-service
+
+    ports:
+      - "3002:3002"
+
+    depends_on:
+      - postgres
+
+
+    environment:
+      PORT: 3002
+
+      DB_USER: ${DB_USER:-admin}
+      DB_PASSWORD: ${DB_PASSWORD:-admin123}
+      DB_NAME: ${DB_NAME:-waterdb}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      ALERT_EMAIL_FROM: ${ALERT_EMAIL_FROM:-}
+      ALERT_EMAIL_TO: ${ALERT_EMAIL_TO:-}
+      SLACK_ENABLED: ${SLACK_ENABLED:-false}
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+
+  frontend:
+    build:
+      context: ./frontend
+
+    container_name: smart-water-frontend
+
+    depends_on:
+      - user-service
+      - tank-service
+      - notification-service
+
+    ports:
+      - "5173:80"
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+
+    container_name: smart-water-prometheus
+
+    depends_on:
+      - user-service
+      - tank-service
+      - notification-service
+
+    ports:
+      - "9090:9090"
+
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus/rules:/etc/prometheus/rules
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.16.0
+
+    container_name: smart-water-postgres-exporter
+
+    depends_on:
+      - postgres
+
+    ports:
+      - "9187:9187"
+
+    environment:
+      DATA_SOURCE_NAME: postgresql://${DB_USER:-admin}:${DB_PASSWORD:-admin123}@postgres:5432/${DB_NAME:-waterdb}?sslmode=disable
+
+  grafana:
+    image: grafana/grafana:11.3.1
+
+    container_name: smart-water-grafana
+
+    depends_on:
+      - prometheus
+
+    ports:
+      - "3005:3000"
+
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SMTP_ENABLED: ${GRAFANA_SMTP_ENABLED:-false}
+      GF_SMTP_HOST: ${GRAFANA_SMTP_HOST:-}
+      GF_SMTP_USER: ${GRAFANA_SMTP_USER:-}
+      GF_SMTP_PASSWORD: ${GRAFANA_SMTP_PASSWORD:-}
+      GF_SMTP_FROM_ADDRESS: ${GRAFANA_SMTP_FROM_ADDRESS:-alerts@example.com}
+
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+
+  loki:
+    image: grafana/loki:3.2.1
+
+    container_name: smart-water-loki
+
+    ports:
+      - "3100:3100"
+
+    command: -config.file=/etc/loki/loki.yml
+
+    volumes:
+      - ./monitoring/loki/loki.yml:/etc/loki/loki.yml
+      - loki_data:/loki
+
+  promtail:
+    image: grafana/promtail:3.2.1
+
+    container_name: smart-water-promtail
+
+    depends_on:
+      - loki
+
+    command: -config.file=/etc/promtail/promtail.yml
+
+    volumes:
+      - ./monitoring/promtail/promtail.yml:/etc/promtail/promtail.yml
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+
+      
+volumes:
+  postgres_data:
+  grafana_data:
+  loki_data:

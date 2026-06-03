@@ -1,0 +1,19 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: Smart Water Email
+    receivers:
+      - uid: smart-water-email
+        type: email
+        settings:
+          addresses: team@example.com
+
+  - orgId: 1
+    name: Smart Water Slack
+    receivers:
+      - uid: smart-water-slack
+        type: slack
+        settings:
+          url: https://hooks.slack.com/services/example
+          recipient: "#alerts"

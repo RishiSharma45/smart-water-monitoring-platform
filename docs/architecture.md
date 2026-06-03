@@ -1,0 +1,118 @@
+# Architecture
+
+## System Architecture
+
+```mermaid
+flowchart TB
+    subgraph Client
+        Browser["React Frontend"]
+    end
+
+    subgraph Services
+        User["user-service"]
+        Tank["tank-service"]
+        Notification["notification-service"]
+    end
+
+    subgraph Data
+        Postgres["PostgreSQL"]
+    end
+
+    subgraph Observability
+        Prometheus["Prometheus"]
+        Grafana["Grafana"]
+        Loki["Loki"]
+        Promtail["Promtail"]
+        PgExporter["PostgreSQL Exporter"]
+    end
+
+    Browser --> User
+    Browser --> Tank
+    Browser --> Notification
+    Tank --> Notification
+
+    User --> Postgres
+    Tank --> Postgres
+    Notification --> Postgres
+
+    Prometheus --> User
+    Prometheus --> Tank
+    Prometheus --> Notification
+    Prometheus --> PgExporter
+    PgExporter --> Postgres
+    Grafana --> Prometheus
+    Promtail --> Loki
+    Grafana --> Loki
+```
+
+## Kubernetes Architecture
+
+```mermaid
+flowchart TB
+    subgraph Namespace["smart-water namespace"]
+        Ingress["Ingress"]
+        FrontendSvc["frontend-service"]
+        UserSvc["user-service"]
+        TankSvc["tank-service"]
+        NotifySvc["notification-service"]
+        PgSvc["postgres-service"]
+
+        FrontendPod["frontend deployment"]
+        UserPod["user-service deployment"]
+        TankPod["tank-service deployment"]
+        NotifyPod["notification-service deployment"]
+        PgPod["postgres deployment"]
+        PVC["postgres-pvc"]
+
+        Prom["prometheus"]
+        Graf["grafana"]
+        Loki["loki"]
+        Promtail["promtail daemonset"]
+    end
+
+    Ingress --> FrontendSvc --> FrontendPod
+    FrontendPod --> UserSvc --> UserPod
+    FrontendPod --> TankSvc --> TankPod
+    FrontendPod --> NotifySvc --> NotifyPod
+    TankPod --> NotifySvc
+    UserPod --> PgSvc --> PgPod
+    TankPod --> PgSvc
+    NotifyPod --> PgSvc
+    PgPod --> PVC
+    Prom --> UserSvc
+    Prom --> TankSvc
+    Prom --> NotifySvc
+    Graf --> Prom
+    Promtail --> Loki
+    Graf --> Loki
+```
+
+## CI/CD Pipeline
+
+```mermaid
+flowchart LR
+    Git["GitHub Repository"] --> Jenkins["Jenkins Pipeline"]
+    Jenkins --> Install["Install Dependencies"]
+    Install --> Build["Build Frontend"]
+    Build --> Validate["Validate Backend"]
+    Validate --> Images["Build Docker Images"]
+    Images --> Push["Push Tagged Images"]
+    Push --> Deploy["kubectl apply + set image"]
+    Deploy --> Verify["Rollout Verification"]
+    Verify --> Success["Deployment Success"]
+    Verify --> Rollback["Automated Rollback"]
+```
+
+## Monitoring Architecture
+
+```mermaid
+flowchart LR
+    Prometheus["Prometheus"] --> User["user-service /metrics"]
+    Prometheus --> Tank["tank-service /metrics"]
+    Prometheus --> Notify["notification-service /metrics"]
+    Prometheus --> PgExporter["postgres-exporter"]
+    PgExporter --> Postgres["PostgreSQL"]
+    Grafana["Grafana"] --> Prometheus
+    Promtail["Promtail"] --> Loki["Loki"]
+    Grafana --> Loki
+```
