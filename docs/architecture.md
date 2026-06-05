@@ -92,11 +92,10 @@ flowchart TB
 ```mermaid
 flowchart LR
     Git["GitHub Repository"] --> Jenkins["Jenkins Pipeline"]
-    Jenkins --> Build["Build Frontend"]
-    Build --> Images["Build Docker Images"]
-    Images --> Deploy["kubectl apply manifests"]
-    Deploy --> Restart["Restart app deployments"]
-    Restart --> Verify["Rollout Verification"]
+    Jenkins --> Build["Build frontend and Docker images"]
+    Build --> Deploy["kubectl apply manifests"]
+    Deploy --> Images["kubectl set image to BUILD_NUMBER"]
+    Images --> Verify["Rollout Verification"]
     Verify --> Success["Deployment Success"]
 ```
 

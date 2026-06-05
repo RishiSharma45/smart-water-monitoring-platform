@@ -21,7 +21,7 @@ spec:
       containers:
       - name: tank-service
 
-        image: smart-water-monitor-tank-service:latest
+        image: smart-water-monitor-tank-service:0
 
         imagePullPolicy: Never
 

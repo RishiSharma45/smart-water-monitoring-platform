@@ -7,10 +7,10 @@ pipeline {
 
     environment {
         K8S_NAMESPACE = 'smart-water'
-        FRONTEND_IMAGE = 'smart-water-monitor-frontend:latest'
-        USER_IMAGE = 'smart-water-monitor-user-service:latest'
-        TANK_IMAGE = 'smart-water-monitor-tank-service:latest'
-        NOTIFICATION_IMAGE = 'smart-water-monitor-notification-service:latest'
+        FRONTEND_REPOSITORY = 'smart-water-monitor-frontend'
+        USER_REPOSITORY = 'smart-water-monitor-user-service'
+        TANK_REPOSITORY = 'smart-water-monitor-tank-service'
+        NOTIFICATION_REPOSITORY = 'smart-water-monitor-notification-service'
     }
 
     options {
@@ -20,24 +20,26 @@ pipeline {
     }
 
     stages {
-        stage('Checkout Source') {
+        stage('Checkout') {
             steps {
                 checkout scm
                 bat 'git rev-parse --short HEAD'
+                script {
+                    env.FRONTEND_IMAGE = "${env.FRONTEND_REPOSITORY}:${env.BUILD_NUMBER}"
+                    env.USER_IMAGE = "${env.USER_REPOSITORY}:${env.BUILD_NUMBER}"
+                    env.TANK_IMAGE = "${env.TANK_REPOSITORY}:${env.BUILD_NUMBER}"
+                    env.NOTIFICATION_IMAGE = "${env.NOTIFICATION_REPOSITORY}:${env.BUILD_NUMBER}"
+                }
+                echo "Docker image tag for this deployment: ${env.BUILD_NUMBER}"
             }
         }
 
-        stage('Build Frontend') {
+        stage('Build') {
             steps {
                 dir('frontend') {
                     bat 'npm ci'
                     bat 'npm run build'
                 }
-            }
-        }
-
-        stage('Build Docker Images') {
-            steps {
                 bat 'docker version'
                 bat 'docker build --load -t %FRONTEND_IMAGE% frontend'
                 bat 'docker build --load -t %USER_IMAGE% services/user-service'
@@ -47,7 +49,7 @@ pipeline {
             }
         }
 
-        stage('Deploy Kubernetes') {
+        stage('Deploy') {
             steps {
                 bat 'kubectl version --client'
                 bat 'kubectl config current-context'
@@ -67,14 +69,14 @@ pipeline {
                 bat 'kubectl apply -f k8s/frontend-deployment.yaml'
                 bat 'kubectl apply -f k8s/frontend-service.yaml'
                 bat 'kubectl apply -f k8s/ingress.yaml'
-                bat 'kubectl -n %K8S_NAMESPACE% rollout restart deployment/frontend'
-                bat 'kubectl -n %K8S_NAMESPACE% rollout restart deployment/user-service'
-                bat 'kubectl -n %K8S_NAMESPACE% rollout restart deployment/tank-service'
-                bat 'kubectl -n %K8S_NAMESPACE% rollout restart deployment/notification-service'
+                bat 'kubectl -n %K8S_NAMESPACE% set image deployment/frontend frontend=%FRONTEND_IMAGE%'
+                bat 'kubectl -n %K8S_NAMESPACE% set image deployment/user-service user-service=%USER_IMAGE%'
+                bat 'kubectl -n %K8S_NAMESPACE% set image deployment/tank-service tank-service=%TANK_IMAGE%'
+                bat 'kubectl -n %K8S_NAMESPACE% set image deployment/notification-service notification-service=%NOTIFICATION_IMAGE%'
             }
         }
 
-        stage('Verify Deployment') {
+        stage('Verify') {
             steps {
                 echo 'Checking deployment rollout status...'
                 bat 'kubectl -n %K8S_NAMESPACE% rollout status deployment/postgres --timeout=180s'
@@ -86,6 +88,7 @@ pipeline {
                 bat 'kubectl -n %K8S_NAMESPACE% get deployments'
                 bat 'kubectl -n %K8S_NAMESPACE% get pods -o wide'
                 bat 'kubectl -n %K8S_NAMESPACE% get services'
+                bat 'kubectl -n %K8S_NAMESPACE% get deployment frontend user-service tank-service notification-service -o custom-columns=NAME:.metadata.name,IMAGE:.spec.template.spec.containers[0].image'
             }
         }
     }

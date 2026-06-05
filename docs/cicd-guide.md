@@ -18,29 +18,28 @@ Jenkins uses the local Docker and kubectl configuration available on the Windows
 ## Pipeline Stages
 
 ```text
-Checkout Source
-Build Frontend
-Build Docker Images
-Deploy Kubernetes
-Verify Deployment
+Checkout
+Build
+Deploy
+Verify
 ```
 
 ## Image Names
 
-Images are built locally with the same names used in the Kubernetes manifests:
+Images are built locally with the Jenkins `BUILD_NUMBER` tag:
 
 ```text
-smart-water-monitor-frontend:latest
-smart-water-monitor-user-service:latest
-smart-water-monitor-tank-service:latest
-smart-water-monitor-notification-service:latest
+smart-water-monitor-frontend:${BUILD_NUMBER}
+smart-water-monitor-user-service:${BUILD_NUMBER}
+smart-water-monitor-tank-service:${BUILD_NUMBER}
+smart-water-monitor-notification-service:${BUILD_NUMBER}
 ```
 
 Because this is a local Docker Desktop deployment, images are not pushed to a remote registry.
 
 ## Deployment
 
-The pipeline applies the core Kubernetes manifests and restarts the application deployments so the latest local images are used.
+The pipeline applies the core Kubernetes manifests, then runs `kubectl set image` so each deployment uses the new `BUILD_NUMBER` image. This avoids stale `latest` or manually edited tags.
 
 Rollout status is checked for:
 

@@ -92,9 +92,8 @@ flowchart TB
 ```mermaid
 flowchart LR
     GitHub["GitHub Push"] --> Jenkins["Jenkins Webhook Trigger"]
-    Jenkins --> FrontendBuild["Build Frontend"]
-    FrontendBuild --> DockerBuild["Build Docker Images"]
-    DockerBuild --> K8sDeploy["Deploy Kubernetes Manifests"]
+    Jenkins --> Build["Build frontend and Docker images"]
+    Build --> K8sDeploy["Deploy manifests and set BUILD_NUMBER images"]
     K8sDeploy --> Verify["Verify Rollout"]
     Verify --> Success["Success"]
 ```

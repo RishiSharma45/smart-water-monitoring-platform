@@ -134,22 +134,20 @@ The [Jenkinsfile](Jenkinsfile) is designed for a realistic college-level Jenkins
 ```text
 GitHub Push
 -> Jenkins Auto Trigger
--> Build Frontend
--> Build Docker Images
--> Deploy Kubernetes
--> Verify Rollout
+-> Build
+-> Deploy
+-> Verify
 -> SUCCESS
 ```
 
 Pipeline stages:
 
-- Checkout Source
-- Build Frontend
-- Build Docker Images
-- Deploy Kubernetes
-- Verify Deployment
+- Checkout
+- Build
+- Deploy
+- Verify
 
-The pipeline builds local Docker images and deploys the Kubernetes manifests directly to the active Docker Desktop Kubernetes context. It does not require Docker Hub, Slack, cloud credentials, or paid services.
+The pipeline tags local Docker images with the Jenkins `BUILD_NUMBER`, updates Kubernetes deployments to that exact image tag, and verifies the rollout. It does not require Docker Hub, Slack, cloud credentials, or paid services.
 
 ## Screenshots
 

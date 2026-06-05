@@ -46,11 +46,10 @@ Use this checklist before submitting or presenting the Smart Water Monitoring Pl
 - [ ] Jenkins can run `git`, `node`, `npm`, `docker`, and `kubectl`.
 - [ ] GitHub webhook points to `/github-webhook/`.
 - [ ] Pipeline stages are simple and viva-friendly:
-  - Checkout Source
-  - Build Frontend
-  - Build Docker Images
-  - Deploy Kubernetes
-  - Verify Deployment
+  - Checkout
+  - Build
+  - Deploy
+  - Verify
 
 ## Monitoring
 

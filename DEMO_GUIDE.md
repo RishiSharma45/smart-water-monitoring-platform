@@ -87,17 +87,17 @@ kubectl -n smart-water port-forward svc/grafana-service 3005:3000
 
 Show the Jenkinsfile stages:
 
-1. Checkout Source
-2. Build Frontend
-3. Build Docker Images
-4. Deploy Kubernetes
-5. Verify Deployment
+1. Checkout
+2. Build
+3. Deploy
+4. Verify
 
 Explain:
 
 - GitHub webhook triggers Jenkins on push.
-- Jenkins builds local Docker images.
+- Jenkins builds local Docker images tagged with `BUILD_NUMBER`.
 - Jenkins applies Kubernetes manifests.
+- Jenkins updates deployments with `kubectl set image`.
 - Jenkins verifies rollout with `kubectl rollout status`.
 
 ## 5. Database Initialization Demo

@@ -21,7 +21,7 @@ spec:
       containers:
       - name: frontend
 
-        image: smart-water-monitor-frontend:latest
+        image: smart-water-monitor-frontend:0
 
         imagePullPolicy: Never
 

@@ -21,7 +21,7 @@ spec:
       containers:
       - name: user-service
 
-        image: smart-water-monitor-user-service:latest
+        image: smart-water-monitor-user-service:0
 
         imagePullPolicy: Never
 

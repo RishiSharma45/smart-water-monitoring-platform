@@ -7,11 +7,10 @@ This project uses a simple Jenkins pipeline that is easy to explain and demonstr
 ```text
 GitHub Push
 -> Jenkins Auto Trigger
--> Checkout Source
--> Build Frontend
--> Build Docker Images
--> Deploy Kubernetes
--> Verify Deployment
+-> Checkout
+-> Build
+-> Deploy
+-> Verify
 -> SUCCESS
 ```
 
@@ -34,35 +33,30 @@ The improved pipeline:
 
 ## Stage Details
 
-### 1. Checkout Source
+### 1. Checkout
 
 Jenkins checks out the repository and prints the current Git commit hash.
 
-### 2. Build Frontend
+### 2. Build
 
-Jenkins runs:
+Jenkins builds the frontend and all local Docker images:
 
 ```powershell
 npm ci
 npm run build
+docker build --load -t smart-water-monitor-frontend:%BUILD_NUMBER% frontend
 ```
 
-This installs frontend dependencies from the lock file and verifies that the React/Vite frontend compiles successfully.
-
-### 3. Build Docker Images
-
-Jenkins builds the local Docker images used by Kubernetes:
+Images use the Jenkins build number:
 
 ```text
-smart-water-monitor-frontend:latest
-smart-water-monitor-user-service:latest
-smart-water-monitor-tank-service:latest
-smart-water-monitor-notification-service:latest
+smart-water-monitor-frontend:${BUILD_NUMBER}
+smart-water-monitor-user-service:${BUILD_NUMBER}
+smart-water-monitor-tank-service:${BUILD_NUMBER}
+smart-water-monitor-notification-service:${BUILD_NUMBER}
 ```
 
-These names match the image names already referenced in the Kubernetes deployment manifests.
-
-### 4. Deploy Kubernetes
+### 3. Deploy
 
 Jenkins applies the core manifests:
 
@@ -76,9 +70,9 @@ Jenkins applies the core manifests:
 - Frontend Deployment and Service
 - Ingress
 
-After applying manifests, Jenkins restarts the application deployments so Kubernetes uses the latest locally built Docker images.
+After applying manifests, Jenkins updates each deployment with `kubectl set image` so Kubernetes rolls out the new `BUILD_NUMBER` tag.
 
-### 5. Verify Deployment
+### 4. Verify
 
 Jenkins checks rollout status for:
 
