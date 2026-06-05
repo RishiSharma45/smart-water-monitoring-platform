@@ -47,7 +47,33 @@ pipeline {
                 bat 'docker build --load -t %USER_IMAGE% services/user-service'
                 bat 'docker build --load -t %TANK_IMAGE% services/tank-service'
                 bat 'docker build --load -t %NOTIFICATION_IMAGE% services/notification-service'
+                bat 'docker run --rm %USER_IMAGE% node --version'
+                bat 'docker run --rm %TANK_IMAGE% node --version'
+                bat 'docker run --rm %NOTIFICATION_IMAGE% node --version'
                 bat 'docker images | findstr smart-water-monitor'
+            }
+        }
+
+        stage('Verify Kubernetes Image Visibility') {
+            steps {
+                bat 'kubectl apply -f k8s/namespace.yaml'
+                bat 'kubectl -n %K8S_NAMESPACE% delete pod image-check-frontend-%BUILD_NUMBER% --ignore-not-found=true'
+                bat 'kubectl -n %K8S_NAMESPACE% delete pod image-check-user-%BUILD_NUMBER% --ignore-not-found=true'
+                bat 'kubectl -n %K8S_NAMESPACE% delete pod image-check-tank-%BUILD_NUMBER% --ignore-not-found=true'
+                bat 'kubectl -n %K8S_NAMESPACE% delete pod image-check-notification-%BUILD_NUMBER% --ignore-not-found=true'
+                bat 'kubectl -n %K8S_NAMESPACE% run image-check-frontend-%BUILD_NUMBER% --image=%FRONTEND_IMAGE% --image-pull-policy=IfNotPresent --restart=Never --command -- sh -c "ls -1 /usr/share/nginx/html/assets && sleep 15"'
+                bat 'kubectl -n %K8S_NAMESPACE% run image-check-user-%BUILD_NUMBER% --image=%USER_IMAGE% --image-pull-policy=IfNotPresent --restart=Never --command -- sh -c "node --version && sleep 15"'
+                bat 'kubectl -n %K8S_NAMESPACE% run image-check-tank-%BUILD_NUMBER% --image=%TANK_IMAGE% --image-pull-policy=IfNotPresent --restart=Never --command -- sh -c "node --version && sleep 15"'
+                bat 'kubectl -n %K8S_NAMESPACE% run image-check-notification-%BUILD_NUMBER% --image=%NOTIFICATION_IMAGE% --image-pull-policy=IfNotPresent --restart=Never --command -- sh -c "node --version && sleep 15"'
+                bat 'kubectl -n %K8S_NAMESPACE% wait --for=condition=Ready pod/image-check-frontend-%BUILD_NUMBER% --timeout=90s'
+                bat 'kubectl -n %K8S_NAMESPACE% wait --for=condition=Ready pod/image-check-user-%BUILD_NUMBER% --timeout=90s'
+                bat 'kubectl -n %K8S_NAMESPACE% wait --for=condition=Ready pod/image-check-tank-%BUILD_NUMBER% --timeout=90s'
+                bat 'kubectl -n %K8S_NAMESPACE% wait --for=condition=Ready pod/image-check-notification-%BUILD_NUMBER% --timeout=90s'
+                bat 'kubectl -n %K8S_NAMESPACE% logs image-check-frontend-%BUILD_NUMBER%'
+                bat 'kubectl -n %K8S_NAMESPACE% logs image-check-user-%BUILD_NUMBER%'
+                bat 'kubectl -n %K8S_NAMESPACE% logs image-check-tank-%BUILD_NUMBER%'
+                bat 'kubectl -n %K8S_NAMESPACE% logs image-check-notification-%BUILD_NUMBER%'
+                bat 'kubectl -n %K8S_NAMESPACE% delete pod image-check-frontend-%BUILD_NUMBER% image-check-user-%BUILD_NUMBER% image-check-tank-%BUILD_NUMBER% image-check-notification-%BUILD_NUMBER% --ignore-not-found=true'
             }
         }
 
@@ -74,8 +100,12 @@ pipeline {
                 bat 'kubectl -n %K8S_NAMESPACE% annotate deployment/frontend smart-water-monitor/build-number=%BUILD_NUMBER% smart-water-monitor/git-commit=%GIT_COMMIT% --overwrite'
                 bat 'kubectl -n %K8S_NAMESPACE% get deployment frontend -o custom-columns=NAME:.metadata.name,IMAGE:.spec.template.spec.containers[0].image,PULL_POLICY:.spec.template.spec.containers[0].imagePullPolicy'
                 bat 'kubectl -n %K8S_NAMESPACE% set image deployment/user-service user-service=%USER_IMAGE%'
+                bat 'kubectl -n %K8S_NAMESPACE% annotate deployment/user-service smart-water-monitor/build-number=%BUILD_NUMBER% smart-water-monitor/git-commit=%GIT_COMMIT% --overwrite'
                 bat 'kubectl -n %K8S_NAMESPACE% set image deployment/tank-service tank-service=%TANK_IMAGE%'
+                bat 'kubectl -n %K8S_NAMESPACE% annotate deployment/tank-service smart-water-monitor/build-number=%BUILD_NUMBER% smart-water-monitor/git-commit=%GIT_COMMIT% --overwrite'
                 bat 'kubectl -n %K8S_NAMESPACE% set image deployment/notification-service notification-service=%NOTIFICATION_IMAGE%'
+                bat 'kubectl -n %K8S_NAMESPACE% annotate deployment/notification-service smart-water-monitor/build-number=%BUILD_NUMBER% smart-water-monitor/git-commit=%GIT_COMMIT% --overwrite'
+                bat 'kubectl -n %K8S_NAMESPACE% get deployment user-service tank-service notification-service -o custom-columns=NAME:.metadata.name,IMAGE:.spec.template.spec.containers[0].image,PULL_POLICY:.spec.template.spec.containers[0].imagePullPolicy'
             }
         }
 

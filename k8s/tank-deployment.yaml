@@ -21,9 +21,10 @@ spec:
       containers:
       - name: tank-service
 
-        image: smart-water-monitor-tank-service:0
+        # Jenkins overrides this with smart-water-monitor-tank-service:${BUILD_NUMBER}.
+        image: smart-water-monitor-tank-service:dev
 
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
 
         ports:
         - containerPort: 3001
