@@ -39,9 +39,11 @@ pipeline {
                 dir('frontend') {
                     bat 'npm ci'
                     bat 'npm run build'
+                    bat 'dir dist\\assets'
                 }
                 bat 'docker version'
                 bat 'docker build --load -t %FRONTEND_IMAGE% frontend'
+                bat 'docker run --rm %FRONTEND_IMAGE% sh -c "ls -1 /usr/share/nginx/html/assets"'
                 bat 'docker build --load -t %USER_IMAGE% services/user-service'
                 bat 'docker build --load -t %TANK_IMAGE% services/tank-service'
                 bat 'docker build --load -t %NOTIFICATION_IMAGE% services/notification-service'
@@ -56,7 +58,6 @@ pipeline {
                 bat 'kubectl apply -f k8s/namespace.yaml'
                 bat 'kubectl apply -f k8s/configmap.yaml'
                 bat 'kubectl apply -f k8s/secret.yaml'
-                bat 'kubectl apply -f k8s/postgres-init-configmap.yaml'
                 bat 'kubectl apply -f k8s/postgres-pvc.yaml'
                 bat 'kubectl apply -f k8s/postgres-deployment.yaml'
                 bat 'kubectl apply -f k8s/postgres-service.yaml'
@@ -70,6 +71,8 @@ pipeline {
                 bat 'kubectl apply -f k8s/frontend-service.yaml'
                 bat 'kubectl apply -f k8s/ingress.yaml'
                 bat 'kubectl -n %K8S_NAMESPACE% set image deployment/frontend frontend=%FRONTEND_IMAGE%'
+                bat 'kubectl -n %K8S_NAMESPACE% annotate deployment/frontend smart-water-monitor/build-number=%BUILD_NUMBER% smart-water-monitor/git-commit=%GIT_COMMIT% --overwrite'
+                bat 'kubectl -n %K8S_NAMESPACE% get deployment frontend -o custom-columns=NAME:.metadata.name,IMAGE:.spec.template.spec.containers[0].image,PULL_POLICY:.spec.template.spec.containers[0].imagePullPolicy'
                 bat 'kubectl -n %K8S_NAMESPACE% set image deployment/user-service user-service=%USER_IMAGE%'
                 bat 'kubectl -n %K8S_NAMESPACE% set image deployment/tank-service tank-service=%TANK_IMAGE%'
                 bat 'kubectl -n %K8S_NAMESPACE% set image deployment/notification-service notification-service=%NOTIFICATION_IMAGE%'
