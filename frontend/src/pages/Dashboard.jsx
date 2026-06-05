@@ -55,7 +55,7 @@ function Dashboard() {
       <div className="page-toolbar">
         <PageHeader
           eyebrow="Operations Overview"
-          title="Water Monitoring Dashboard"
+          title="Water Monitoring Dashboard - Build Test"
           description="Track tank capacity, low-water alerts, and platform readiness from one control surface."
         />
         <button className="secondary-button" type="button" onClick={loadDashboard}>
