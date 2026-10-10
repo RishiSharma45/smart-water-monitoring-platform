@@ -7,7 +7,7 @@ const getAlerts = async (req, res) => {
             `
             SELECT *
             FROM alerts
-            ORDER BY id DESC
+            ORDER BY created_at DESC, id DESC
             `
         );
 

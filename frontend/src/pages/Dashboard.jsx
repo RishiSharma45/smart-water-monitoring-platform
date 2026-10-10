@@ -40,15 +40,24 @@ function Dashboard() {
     return Math.round(total / tanks.length);
   }, [tanks]);
 
-  const activeLowAlerts = alerts.filter(
-    (alert) => alert.alert_type === "LOW_WATER_LEVEL"
-  ).length;
+  const totalAlertEvents = alerts.length;
 
   const lowTanks = tanks.filter((tank) => Number(tank.water_level) < 20);
   const healthyTanks = tanks.filter((tank) => Number(tank.water_level) >= 50);
   const warningTanks = tanks.filter(
     (tank) => Number(tank.water_level) >= 20 && Number(tank.water_level) < 50
   );
+
+  const recentAlerts = useMemo(() => {
+    return [...alerts]
+      .sort((a, b) => {
+        const timeA = a.created_at ? Date.parse(a.created_at) : 0;
+        const timeB = b.created_at ? Date.parse(b.created_at) : 0;
+        if (timeA !== timeB) return timeB - timeA;
+        return (b.id || 0) - (a.id || 0);
+      })
+      .slice(0, 5);
+  }, [alerts]);
 
   return (
     <section>
@@ -97,10 +106,10 @@ function Dashboard() {
           tone={averageWaterLevel < 30 ? "danger" : "good"}
         />
         <StatCard
-          label="Active Low Water Alerts"
-          value={loading ? "..." : activeLowAlerts}
-          hint="Generated alert events"
-          tone={activeLowAlerts > 0 ? "danger" : "good"}
+          label="Total Alert Events"
+          value={loading ? "..." : totalAlertEvents}
+          hint="Recorded in alert history"
+          tone={totalAlertEvents > 0 ? "danger" : "good"}
         />
       </div>
 
@@ -120,7 +129,7 @@ function Dashboard() {
             {tanks.length === 0 && !loading ? (
               <p className="empty-state">No tanks are available yet.</p>
             ) : (
-              tanks.slice(0, 5).map((tank) => (
+              tanks.map((tank) => (
                 <div className="level-row" key={tank.id}>
                   <div>
                     <strong>{tank.tank_name}</strong>
@@ -142,10 +151,10 @@ function Dashboard() {
           </div>
 
           <div className="list-stack">
-            {alerts.length === 0 && !loading ? (
+            {recentAlerts.length === 0 && !loading ? (
               <p className="empty-state">No alerts have been recorded.</p>
             ) : (
-              alerts.slice(0, 5).map((alert) => (
+              recentAlerts.map((alert) => (
                 <div className="alert-row" key={alert.id}>
                   <div>
                     <strong>{alert.tank_name}</strong>

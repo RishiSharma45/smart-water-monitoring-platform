@@ -5,6 +5,30 @@ const {
     tanksTotalGauge
 } = require("../config/metrics");
 
+const notifyLevelCheck = async (tank, previousLevel = null) => {
+    try {
+        const url = process.env.NOTIFICATION_SERVICE_URL || "http://notification-service:3002";
+        const payload = {
+            tank_name: tank.tank_name,
+            water_level: Number(tank.water_level)
+        };
+        if (previousLevel !== null && previousLevel !== undefined) {
+            payload.previous_water_level = Number(previousLevel);
+        }
+        const response = await axios.post(
+            `${url}/api/notifications/check`,
+            payload
+        );
+        console.log("Notification:", response.data);
+        return response.data;
+    } catch (notificationError) {
+        console.error(
+            "Failed to contact Notification Service:",
+            notificationError.message
+        );
+    }
+};
+
 const createTank = async (req, res) => {
     try {
         const { tank_name, water_level } = req.body;
@@ -24,7 +48,10 @@ const createTank = async (req, res) => {
             Number(countResult.rows[0].count)
         );
 
-        res.status(201).json(result.rows[0]);
+        const newTank = result.rows[0];
+        await notifyLevelCheck(newTank);
+
+        res.status(201).json(newTank);
 
     } catch (error) {
         console.error(error);
@@ -64,9 +91,21 @@ const getTanks = async (req, res) => {
 
 const updateTankLevel = async (req, res) => {
     try {
-
         const { id } = req.params;
         const { water_level } = req.body;
+
+        const currentTankResult = await pool.query(
+            "SELECT * FROM tanks WHERE id = $1",
+            [id]
+        );
+
+        if (currentTankResult.rows.length === 0) {
+            return res.status(404).json({
+                message: "Tank not found"
+            });
+        }
+
+        const previousLevel = Number(currentTankResult.rows[0].water_level);
 
         const result = await pool.query(
             `
@@ -78,36 +117,14 @@ const updateTankLevel = async (req, res) => {
             [water_level, id]
         );
 
-        if (result.rows.length === 0) {
-    return res.status(404).json({
-        message: "Tank not found"
-    });
-}
+        const updatedTank = result.rows[0];
+        tankUpdatesTotal.inc({
+            service: "tank-service"
+        });
 
-const updatedTank = result.rows[0];
-tankUpdatesTotal.inc({
-    service: "tank-service"
-});
+        await notifyLevelCheck(updatedTank, previousLevel);
 
-try {
-    const notificationResponse = await axios.post(
-        `${process.env.NOTIFICATION_SERVICE_URL}/api/notifications/check`,
-        {
-            tank_name: updatedTank.tank_name,
-            water_level: updatedTank.water_level
-        }
-    );
-
-    console.log("Notification:", notificationResponse.data);
-
-} catch (notificationError) {
-    console.error(
-        "Failed to contact Notification Service:",
-        notificationError.message
-    );
-}
-
-res.json(updatedTank);
+        res.json(updatedTank);
 
     } catch (error) {
 

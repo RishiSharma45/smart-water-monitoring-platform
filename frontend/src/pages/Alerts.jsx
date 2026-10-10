@@ -57,19 +57,26 @@ function Alerts() {
               </tr>
             </thead>
             <tbody>
-              {alerts.map((alert) => (
-                <tr key={alert.id}>
-                  <td>#{alert.id}</td>
-                  <td>{alert.tank_name}</td>
-                  <td>
-                    <StatusBadge level="critical">
-                      {alert.water_level}%
-                    </StatusBadge>
-                  </td>
-                  <td>{alert.alert_type}</td>
-                  <td>{new Date(alert.created_at).toLocaleString()}</td>
-                </tr>
-              ))}
+              {[...alerts]
+                .sort((a, b) => {
+                  const timeA = a.created_at ? Date.parse(a.created_at) : 0;
+                  const timeB = b.created_at ? Date.parse(b.created_at) : 0;
+                  if (timeA !== timeB) return timeB - timeA;
+                  return (b.id || 0) - (a.id || 0);
+                })
+                .map((alert) => (
+                  <tr key={alert.id}>
+                    <td>#{alert.id}</td>
+                    <td>{alert.tank_name}</td>
+                    <td>
+                      <StatusBadge level="critical">
+                        {alert.water_level}%
+                      </StatusBadge>
+                    </td>
+                    <td>{alert.alert_type}</td>
+                    <td>{new Date(alert.created_at).toLocaleString()}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>

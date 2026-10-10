@@ -1,0 +1,137 @@
+# Production Docker Compose for standalone EC2 deployment
+# Uses internal Docker networking: all microservices and Postgres remain private,
+# only the Frontend (Nginx reverse-proxy) is published on port 80.
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: smart-water-postgres
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_USER: ${DB_USER:-admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be configured in environment or .env file}
+      POSTGRES_DB: ${DB_NAME:-waterdb}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ./docker/db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./docker/db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-admin} -d ${DB_NAME:-waterdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  user-service:
+    image: smart-water-monitor-user-service:${SMART_WATER_IMAGE_TAG:-prod}
+    build:
+      context: ./services/user-service
+    container_name: user-service
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      DB_USER: ${DB_USER:-admin}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be configured in environment or .env file}
+      DB_NAME: ${DB_NAME:-waterdb}
+      DB_HOST: postgres
+      DB_PORT: 5432
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  tank-service:
+    image: smart-water-monitor-tank-service:${SMART_WATER_IMAGE_TAG:-prod}
+    build:
+      context: ./services/tank-service
+    container_name: tank-service
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 3001
+      DB_USER: ${DB_USER:-admin}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be configured in environment or .env file}
+      DB_NAME: ${DB_NAME:-waterdb}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      NOTIFICATION_SERVICE_URL: http://notification-service:3002
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3001/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  notification-service:
+    image: smart-water-monitor-notification-service:${SMART_WATER_IMAGE_TAG:-prod}
+    build:
+      context: ./services/notification-service
+    container_name: notification-service
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 3002
+      DB_USER: ${DB_USER:-admin}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be configured in environment or .env file}
+      DB_NAME: ${DB_NAME:-waterdb}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      ALERT_EMAIL_FROM: ${ALERT_EMAIL_FROM:-}
+      ALERT_EMAIL_TO: ${ALERT_EMAIL_TO:-}
+      SLACK_ENABLED: ${SLACK_ENABLED:-false}
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3002/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    image: smart-water-monitor-frontend:${SMART_WATER_IMAGE_TAG:-prod}
+    build:
+      context: ./frontend
+    container_name: smart-water-frontend
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "80:80"
+    depends_on:
+      user-service:
+        condition: service_healthy
+      tank-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  postgres_prod_data:
